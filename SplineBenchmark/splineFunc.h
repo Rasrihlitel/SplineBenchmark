@@ -21,7 +21,7 @@ struct Data {
 	splineCoeff coef;
 };
 
-// -----------------Проверка данных-----------------//
+// -----------------Подготовка данных-----------------//
 
 //Подготовка входных координат
 void prepareCoord(std::vector<double>& x, std::vector<double>& y);
@@ -41,14 +41,14 @@ void sweepMethod(
 );
 
 //Вычисление коэффициентов сплайна
-splineCoeff calculateSpline(
+splineCoeff createSpline(
 	const std::vector<double>& x,
 	const std::vector<double>& y,
 	Data& data
 );
 
 //Полный цикл вычисления
-splineCoeff calculateCoeff(std::vector<double>& x, std::vector<double>& y);
+splineCoeff calculateCycle(std::vector<double>& x, std::vector<double>& y);
 
 //-----------------Вычисления в точках-----------------//
 

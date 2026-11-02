@@ -69,7 +69,6 @@ void sweepMethod(
 		alpha[i] = B[i] / denom;
 		beta[i] = (F[i] - A[i] * beta[i - 1]) / denom;
 	}
-
 	cCoef[size - 1] = (F[size - 1] - A[size - 1] * beta[size - 2])
 		/ (C[size - 1] - A[size - 1] * alpha[size - 2]);
 
@@ -78,7 +77,7 @@ void sweepMethod(
 }
 
 //Вычисление коэффициентов сплайна
-splineCoeff calculateSpline(
+splineCoeff createSpline(
 	const std::vector<double>& x,
 	const std::vector<double>& y,
 	Data& data
@@ -96,10 +95,10 @@ splineCoeff calculateSpline(
 }
 
 //Полный цикл вычисления
-splineCoeff calculateCoeff(std::vector<double>& x, std::vector<double>& y) {
+splineCoeff calculateCycle(std::vector<double>& x, std::vector<double>& y) {
 	prepareCoord(x, y);
 	Data data = prepareData(x, y);
-	return calculateSpline(x, y, data);
+	return createSpline(x, y, data);
 }
 
 //Нахождение интервала
