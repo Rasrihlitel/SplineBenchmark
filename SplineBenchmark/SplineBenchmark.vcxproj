@@ -141,9 +141,11 @@
   <ItemGroup>
     <ClCompile Include="SplineBenchmark.cpp" />
     <ClCompile Include="splineFunc.cpp" />
+    <ClCompile Include="tests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="splineFunc.h" />
+    <ClInclude Include="tests.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -3,5 +3,5 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
-  <Project Path="SplineBenchmark/SplineBenchmark.vcxproj" />
+  <Project Path="SplineBenchmark/SplineBenchmark.vcxproj" Id="aacb7868-3afd-487b-8b39-60a4462a8e02" />
 </Solution>
