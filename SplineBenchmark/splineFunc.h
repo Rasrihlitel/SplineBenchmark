@@ -40,6 +40,13 @@ void sweepMethod(
 	std::vector<double>& cCoef
 );
 
+//Вычисление коэффициентов b и d
+void computeBD(
+	const std::vector<double>& x,
+	const std::vector<double>& y,
+	Data& data
+);
+
 //Вычисление коэффициентов сплайна
 splineCoeff createSpline(
 	const std::vector<double>& x,
@@ -48,7 +55,7 @@ splineCoeff createSpline(
 );
 
 //Полный цикл вычисления
-splineCoeff calculateCycle(std::vector<double>& x, std::vector<double>& y);
+splineCoeff calculateLoop(std::vector<double>& x, std::vector<double>& y);
 
 //-----------------Вычисления в точках-----------------//
 

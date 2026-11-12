@@ -19,7 +19,7 @@ void demonstration() {
     //Построение сплайна
     splineCoeff coef;
     try {
-        coef = calculateCycle(x, y);
+        coef = calculateLoop(x, y);
         std::cout << "The spline is built\n";
     }
     catch (const std::exception& e) {
@@ -77,6 +77,10 @@ int main() {
 
         //Четвертый тест - восстановление линейной функции
         std::cout << "The linear function has been reconstructed? -> " << testLinearReproduction() << "\n";
+
+        //Пятый тест - тест на время
+        testTime();
+
     }
     catch (const std::exception& e) {
         std::cerr << "Fatal error: " << e.what() << "\n";

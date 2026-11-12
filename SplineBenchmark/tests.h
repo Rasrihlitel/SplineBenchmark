@@ -14,4 +14,7 @@ bool testBoundaryPoints();
 //Четвертый тест - воспроизведение линейной функции
 bool testLinearReproduction();
 
+//Пятый тест - тест по времени
+void testTime();
+
 #endif //TESTS_H

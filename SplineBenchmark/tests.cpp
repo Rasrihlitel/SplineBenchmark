@@ -1,11 +1,15 @@
 #include <vector>
+#include <chrono>
+#include <algorithm>
+#include <limits>
+#include <iostream>
 #include "splineFunc.h"
 
 //Первый тест - проверка интерполяции в узлах (над y = x^3)
 bool testInterpolationNodes() {
     std::vector<double> x = { 0.0, 1.0, 2.0, 3.0 };
     std::vector<double> y = { 0.0, 1.0, 8.0, 27.0 };
-    splineCoeff coef = calculateCycle(x, y);
+    splineCoeff coef = calculateLoop(x, y);
     bool ok = true;
     for (size_t i = 0; i < x.size(); ++i) {
         double val = evaluateSpline(coef, x, x[i]);
@@ -18,7 +22,7 @@ bool testInterpolationNodes() {
 bool testContinuity() {
     std::vector<double> x = { 0.0, 1.0, 2.0, 3.0, 4.0 };
     std::vector<double> y = { 0.0, 1.0, 8.0, 27.0, 64.0 };
-    splineCoeff coef = calculateCycle(x, y);
+    splineCoeff coef = calculateLoop(x, y);
     bool ok = true;
     const double small = 1e-10;
     for (size_t i = 1; i + 1 < x.size(); ++i) {
@@ -41,7 +45,7 @@ bool testBoundaryPoints() {
     std::vector<double> x = { 0.0, 1.0, 2.0, 3.0 };
     std::vector<double> y = { 0.0, 1.0, 8.0, 27.0 };
 
-    splineCoeff coef = calculateCycle(x, y);
+    splineCoeff coef = calculateLoop(x, y);
     bool ok = true;
     if (std::abs(coef.c.front()) >= 1e-10) ok = false;
     if (std::abs(coef.c.back()) >= 1e-10) ok = false;
@@ -54,7 +58,7 @@ bool testLinearReproduction() {
     std::vector<double> x = { 0.0, 1.0, 2.0, 3.0 };
     std::vector<double> y;
     for (double val : x) y.push_back(f(val));
-    splineCoeff coef = calculateCycle(x, y);
+    splineCoeff coef = calculateLoop(x, y);
     bool ok = true;
     const int intervals = 25;
     for (size_t i = 0; i < x.size() - 1; ++i) {
@@ -65,4 +69,28 @@ bool testLinearReproduction() {
         }
     }
     return ok;
+}
+
+//Пятый тест - тест по времени
+void testTime() {
+    std::srand(42);
+    int repeats = 50;
+    int size = 1000000;
+    std::vector<double> baseX(size);
+    std::vector<double> baseY(size);
+    for (int i = 0; i < size; i++) {
+        baseX[i] = i * (1.0 / (size - 1));
+        baseY[i] = static_cast<double>(std::rand());
+    }
+    long long totalTime = 0;
+    for (int i = 0; i < repeats; i++) {
+        std::vector<double> x(baseX), y(baseY);
+        auto start = std::chrono::steady_clock::now();
+        calculateLoop(x, y);
+        auto end = std::chrono::steady_clock::now();
+        totalTime += std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    }
+    double averageTime = static_cast<double>(totalTime) / static_cast<double>(repeats);
+    std::cout << "Size: " << size << std::endl;
+    std::cout << "Average time: " << averageTime << " ms" << std::endl;
 }

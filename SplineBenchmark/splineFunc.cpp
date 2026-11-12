@@ -76,6 +76,20 @@ void sweepMethod(
 		cCoef[i] = beta[i] - alpha[i] * cCoef[i + 1];
 }
 
+void computeBD(
+	const std::vector<double>& x,
+	const std::vector<double>& y,
+	Data& data
+) {
+	size_t size = x.size();
+	for (size_t i = 1; i < size; ++i) {
+		data.coef.d[i] = (data.coef.c[i] - data.coef.c[i - 1]) / data.h[i - 1];
+		data.coef.b[i] = data.h[i - 1] * data.coef.c[i] / 2.0
+			- data.h[i - 1] * data.h[i - 1] * data.coef.d[i] / 6.0
+			+ (y[i] - y[i - 1]) / data.h[i - 1];
+	}
+}
+
 //Вычисление коэффициентов сплайна
 splineCoeff createSpline(
 	const std::vector<double>& x,
@@ -84,18 +98,12 @@ splineCoeff createSpline(
 ) {
 	size_t size = x.size();
 	sweepMethod(data.A, data.B, data.C, data.F, data.coef.c);
-
-	for (size_t i = 1; i < size; ++i) {
-		data.coef.d[i] = (data.coef.c[i] - data.coef.c[i - 1]) / data.h[i - 1];
-		data.coef.b[i] = data.h[i - 1] * data.coef.c[i] / 2.0
-			- data.h[i - 1] * data.h[i - 1] * data.coef.d[i] / 6.0
-			+ (y[i] - y[i - 1]) / data.h[i - 1];
-	}
+	computeBD(x, y, data);
 	return data.coef;
 }
 
 //Полный цикл вычисления
-splineCoeff calculateCycle(std::vector<double>& x, std::vector<double>& y) {
+splineCoeff calculateLoop(std::vector<double>& x, std::vector<double>& y) {
 	prepareCoord(x, y);
 	Data data = prepareData(x, y);
 	return createSpline(x, y, data);
