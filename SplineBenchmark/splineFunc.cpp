@@ -11,7 +11,7 @@ void prepareCoord(std::vector<double>& x, std::vector<double>& y) {
 		throw std::invalid_argument("The number of coordinates cannot be less than 2");
 	bool isSort = true;
 	for (size_t i = 0; i < x.size() - 1; i++) {
-		if (x[i + 1] < x[i]) isSort = false;
+		if (x[i + 1] < x[i]) { isSort = false; break; }
 	}
 	if (isSort) return;
 	std::vector<std::pair<double, double>> coords(x.size());
@@ -25,76 +25,66 @@ void prepareCoord(std::vector<double>& x, std::vector<double>& y) {
 	}
 }
 
-//Подготовка входных данных
-splineCoeff prepareData(const std::vector<double>& x, const std::vector<double>& y) {
-	size_t size = x.size();
-	splineCoeff coef;
-	coef.a = y;
-	coef.b.resize(size, 0.0);
-	coef.c.resize(size, 0.0);
-	coef.d.resize(size, 0.0);
-	return coef;
-}
-
 //Решение трехдиагональной матрицы 
 void sweepMethod(
 	const std::vector<double>& x,
 	const std::vector<double>& y,
-	std::vector<double>& cCoef
+	SplineWorkspace& ws
 ) {
 	size_t size = x.size();
-	std::vector<double> alpha(size, 0.0);
-	std::vector<double>	beta(size, 0.0);
 	for (size_t i = 1; i < size - 1; ++i) {
 		double A = x[i] - x[i - 1];
 		double C = 2.0 * (x[i] - x[i - 1] + x[i + 1] - x[i]);
 		double B = x[i + 1] - x[i];
 		double F = 6.0 * ((y[i + 1] - y[i]) / (x[i + 1] - x[i]) 
 			- (y[i] - y[i - 1]) / (x[i] - x[i - 1]));
-		double denom = C - alpha[i - 1] * A;
-		alpha[i] = B / denom;
-		beta[i] = (F - A * beta[i - 1]) / denom;
-	}
-	cCoef[size - 1] = (6.0 * ((y[size - 1] - y[size - 1]) / (x[size - 1] - x[size - 2])
-		- (y[size - 2] - y[size - 3]) / (x[size - 1] - x[size - 2]))
-		- (x[size - 2] - x[size - 3]) * beta[size - 2])
-		/ (2.0 * (x[size - 2] - x[size - 3] + x[size - 1] - x[size - 2])
-		- (x[size - 2] - x[size - 3]) * alpha[size - 2]);
 
-	for (int i = size - 2; i >= 0; i--)
-		cCoef[i] = beta[i] - alpha[i] * cCoef[i + 1];
+		double denom = C - ws.alpha[i - 1] * A;
+		ws.alpha[i] = B / denom;
+		ws.beta[i] = (F - A * ws.beta[i - 1]) / denom;
+	}
+
+	for (int i = size - 2; i >= 1; i--)
+		ws.coef.c[i] = ws.beta[i] - ws.alpha[i] * ws.coef.c[i + 1];
 }
 
 void computeBD(
 	const std::vector<double>& x,
 	const std::vector<double>& y,
-	splineCoeff& coef
+	SplineWorkspace& ws
 ) {
 	size_t size = x.size();
 	for (size_t i = 1; i < size; ++i) {
-		coef.d[i] = (coef.c[i] - coef.c[i - 1]) / (x[i] - x[i - 1]);
-		coef.b[i] = (x[i] - x[i - 1]) * coef.c[i] / 2.0
-			- (x[i] - x[i - 1]) * (x[i] - x[i - 1]) * coef.d[i] / 6.0
-			+ (y[i] - y[i - 1]) / (x[i] - x[i - 1]);
+		double h = x[i] - x[i - 1];
+		ws.coef.d[i] = (ws.coef.c[i] - ws.coef.c[i - 1]) / h;
+		ws.coef.b[i] = (h * ws.coef.c[i] / 2.0)
+			- (h * h * ws.coef.d[i] / 6.0)
+			+ (y[i] - y[i - 1]) / h;
 	}
 }
 
 //Вычисление коэффициентов сплайна
-splineCoeff createSpline(
+splineCoeff& createSpline(
 	const std::vector<double>& x,
 	const std::vector<double>& y,
-	splineCoeff& coef
+	SplineWorkspace& ws
 ) {
-	sweepMethod(x, y, coef.c);
-	computeBD(x, y, coef);
-	return coef;
+	size_t size = x.size();
+	ws.resize(size);
+	ws.coef.a = y;
+	sweepMethod(x, y, ws);
+	computeBD(x, y, ws);
+	return ws.coef;
 }
 
 //Полный цикл вычисления
-splineCoeff calculateLoop(std::vector<double>& x, std::vector<double>& y) {
+const splineCoeff& calculateLoop(
+	std::vector<double>& x,
+	std::vector<double>& y,
+	SplineWorkspace& ws
+) {
 	prepareCoord(x, y);
-	splineCoeff data = prepareData(x, y);
-	return createSpline(x, y, data);
+	return createSpline(x, y, ws);
 }
 
 //Нахождение интервала

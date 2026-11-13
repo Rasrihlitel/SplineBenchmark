@@ -11,13 +11,27 @@ struct splineCoeff {
 	std::vector<double> d;
 };
 
+// Рабочее пространство
+struct SplineWorkspace {
+	splineCoeff coef;
+	std::vector<double> alpha;
+	std::vector<double> beta;
+	void resize(int size) {
+		if (alpha.size() != size) {
+			alpha.resize(size, 0.0);
+			beta.resize(size, 0.0);
+			coef.a.resize(size, 0.0);
+			coef.b.resize(size, 0.0);
+			coef.c.resize(size, 0.0);
+			coef.d.resize(size, 0.0);
+		}
+	}
+};
+
 // -----------------Подготовка данных-----------------//
 
 //Подготовка входных координат
 void prepareCoord(std::vector<double>& x, std::vector<double>& y);
-
-//Подготовка входных данных
-splineCoeff prepareData(const std::vector<double>& x, const std::vector<double>& y);
 
 //-----------------Вычисление сплайна-----------------//
 
@@ -25,25 +39,29 @@ splineCoeff prepareData(const std::vector<double>& x, const std::vector<double>&
 void sweepMethod(
 	const std::vector<double>& x,
 	const std::vector<double>& y,
-	std::vector<double>& cCoef
+	SplineWorkspace& ws
 );
 
 //Вычисление коэффициентов b и d
 void computeBD(
 	const std::vector<double>& x,
 	const std::vector<double>& y,
-	splineCoeff& data
+	SplineWorkspace& ws
 );
 
 //Вычисление коэффициентов сплайна
-splineCoeff createSpline(
+splineCoeff& createSpline(
 	const std::vector<double>& x,
 	const std::vector<double>& y,
-	splineCoeff& data
+	SplineWorkspace& ws
 );
 
 //Полный цикл вычисления
-splineCoeff calculateLoop(std::vector<double>& x, std::vector<double>& y);
+const splineCoeff& calculateLoop(
+	std::vector<double>& x,
+	std::vector<double>& y,
+	SplineWorkspace& ws
+);
 
 //-----------------Вычисления в точках-----------------//
 

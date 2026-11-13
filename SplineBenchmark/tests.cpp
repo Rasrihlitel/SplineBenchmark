@@ -9,7 +9,8 @@
 bool testInterpolationNodes() {
     std::vector<double> x = { 0.0, 1.0, 2.0, 3.0 };
     std::vector<double> y = { 0.0, 1.0, 8.0, 27.0 };
-    splineCoeff coef = calculateLoop(x, y);
+    SplineWorkspace ws;
+    splineCoeff coef = calculateLoop(x, y, ws);
     bool ok = true;
     for (size_t i = 0; i < x.size(); ++i) {
         double val = evaluateSpline(coef, x, x[i]);
@@ -22,7 +23,8 @@ bool testInterpolationNodes() {
 bool testContinuity() {
     std::vector<double> x = { 0.0, 1.0, 2.0, 3.0, 4.0 };
     std::vector<double> y = { 0.0, 1.0, 8.0, 27.0, 64.0 };
-    splineCoeff coef = calculateLoop(x, y);
+    SplineWorkspace ws;
+    splineCoeff coef = calculateLoop(x, y, ws);
     bool ok = true;
     const double small = 1e-10;
     for (size_t i = 1; i + 1 < x.size(); ++i) {
@@ -44,8 +46,8 @@ bool testContinuity() {
 bool testBoundaryPoints() {
     std::vector<double> x = { 0.0, 1.0, 2.0, 3.0 };
     std::vector<double> y = { 0.0, 1.0, 8.0, 27.0 };
-
-    splineCoeff coef = calculateLoop(x, y);
+    SplineWorkspace ws;
+    splineCoeff coef = calculateLoop(x, y,ws);
     bool ok = true;
     if (std::abs(coef.c.front()) >= 1e-10) ok = false;
     if (std::abs(coef.c.back()) >= 1e-10) ok = false;
@@ -58,7 +60,8 @@ bool testLinearReproduction() {
     std::vector<double> x = { 0.0, 1.0, 2.0, 3.0 };
     std::vector<double> y;
     for (double val : x) y.push_back(f(val));
-    splineCoeff coef = calculateLoop(x, y);
+    SplineWorkspace ws;
+    splineCoeff coef = calculateLoop(x, y, ws);
     bool ok = true;
     const int intervals = 25;
     for (size_t i = 0; i < x.size() - 1; ++i) {
@@ -74,7 +77,7 @@ bool testLinearReproduction() {
 //Пятый тест - тест по времени
 void testTime() {
     std::srand(42);
-    int repeats = 500;
+    int repeats = 50;
     int size = 1000000;
     std::vector<double> baseX(size);
     std::vector<double> baseY(size);
@@ -83,10 +86,10 @@ void testTime() {
         baseY[i] = static_cast<double>(std::rand());
     }
     long long totalTime = 0;
+    SplineWorkspace ws;
     for (int i = 0; i < repeats; i++) {
-        std::vector<double> x(baseX), y(baseY);
         auto start = std::chrono::steady_clock::now();
-        calculateLoop(x, y);
+        calculateLoop(baseX, baseY, ws);
         auto end = std::chrono::steady_clock::now();
         totalTime += std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
     }

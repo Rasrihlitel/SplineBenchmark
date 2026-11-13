@@ -18,8 +18,9 @@ void demonstration() {
     std::cout << "\n";
     //Построение сплайна
     splineCoeff coef;
+    SplineWorkspace ws;
     try {
-        coef = calculateLoop(x, y);
+        coef = calculateLoop(x, y, ws);
         std::cout << "The spline is built\n";
     }
     catch (const std::exception& e) {
