@@ -11,32 +11,20 @@ struct splineCoeff {
 	std::vector<double> d;
 };
 
-//Подготовленные данные
-struct Data {
-	std::vector<double> A;
-	std::vector<double> B;
-	std::vector<double> C;
-	std::vector<double> F;
-	std::vector<double> h;
-	splineCoeff coef;
-};
-
 // -----------------Подготовка данных-----------------//
 
 //Подготовка входных координат
 void prepareCoord(std::vector<double>& x, std::vector<double>& y);
 
 //Подготовка входных данных
-Data prepareData(const std::vector<double>& x, const std::vector<double>& y);
+splineCoeff prepareData(const std::vector<double>& x, const std::vector<double>& y);
 
 //-----------------Вычисление сплайна-----------------//
 
 //Решение трехдиагональной матрицы 
 void sweepMethod(
-	const std::vector<double>& A,
-	const std::vector<double>& B,
-	const std::vector<double>& C,
-	const std::vector<double>& F,
+	const std::vector<double>& x,
+	const std::vector<double>& y,
 	std::vector<double>& cCoef
 );
 
@@ -44,14 +32,14 @@ void sweepMethod(
 void computeBD(
 	const std::vector<double>& x,
 	const std::vector<double>& y,
-	Data& data
+	splineCoeff& data
 );
 
 //Вычисление коэффициентов сплайна
 splineCoeff createSpline(
 	const std::vector<double>& x,
 	const std::vector<double>& y,
-	Data& data
+	splineCoeff& data
 );
 
 //Полный цикл вычисления

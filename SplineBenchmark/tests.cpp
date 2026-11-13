@@ -74,7 +74,7 @@ bool testLinearReproduction() {
 //Пятый тест - тест по времени
 void testTime() {
     std::srand(42);
-    int repeats = 50;
+    int repeats = 500;
     int size = 1000000;
     std::vector<double> baseX(size);
     std::vector<double> baseY(size);

@@ -26,51 +26,40 @@ void prepareCoord(std::vector<double>& x, std::vector<double>& y) {
 }
 
 //Подготовка входных данных
-Data prepareData(const std::vector<double>& x, const std::vector<double>& y) {
+splineCoeff prepareData(const std::vector<double>& x, const std::vector<double>& y) {
 	size_t size = x.size();
-	Data data;
-	data.A.resize(size, 0);
-	data.B.resize(size, 0);
-	data.C.resize(size, 1);
-	data.F.resize(size, 0);
-	data.h.resize(size - 1, 0);
-	data.coef.a = y;
-	data.coef.b.resize(size, 0.0);
-	data.coef.c.resize(size, 0.0);
-	data.coef.d.resize(size, 0.0);
-	for (size_t i = 0; i < size - 1; i++) data.h[i] = x[i + 1] - x[i];
-	for (size_t i = 1; i < size - 1; i++) {
-		data.A[i] = data.h[i - 1];
-		data.C[i] = 2.0 * (data.h[i - 1] + data.h[i]);
-		data.B[i] = data.h[i];
-		data.F[i] = 6.0 * ((y[i + 1] - y[i]) / data.h[i] - (y[i] - y[i - 1]) / data.h[i - 1]);
-	}
-	return data;
+	splineCoeff coef;
+	coef.a = y;
+	coef.b.resize(size, 0.0);
+	coef.c.resize(size, 0.0);
+	coef.d.resize(size, 0.0);
+	return coef;
 }
 
 //Решение трехдиагональной матрицы 
 void sweepMethod(
-	const std::vector<double>& A,
-	const std::vector<double>& B,
-	const std::vector<double>& C,
-	const std::vector<double>& F,
+	const std::vector<double>& x,
+	const std::vector<double>& y,
 	std::vector<double>& cCoef
 ) {
-	size_t size = A.size();
+	size_t size = x.size();
 	std::vector<double> alpha(size, 0.0);
 	std::vector<double>	beta(size, 0.0);
-	for (size_t i = 0; i < size - 1; ++i) {
-		if (i == 0) {
-			alpha[0] = B[0] / C[0];
-			beta[0] = F[0] / C[0];
-			continue;
-		}
-		double denom = C[i] - alpha[i - 1] * A[i];
-		alpha[i] = B[i] / denom;
-		beta[i] = (F[i] - A[i] * beta[i - 1]) / denom;
+	for (size_t i = 1; i < size - 1; ++i) {
+		double A = x[i] - x[i - 1];
+		double C = 2.0 * (x[i] - x[i - 1] + x[i + 1] - x[i]);
+		double B = x[i + 1] - x[i];
+		double F = 6.0 * ((y[i + 1] - y[i]) / (x[i + 1] - x[i]) 
+			- (y[i] - y[i - 1]) / (x[i] - x[i - 1]));
+		double denom = C - alpha[i - 1] * A;
+		alpha[i] = B / denom;
+		beta[i] = (F - A * beta[i - 1]) / denom;
 	}
-	cCoef[size - 1] = (F[size - 1] - A[size - 1] * beta[size - 2])
-		/ (C[size - 1] - A[size - 1] * alpha[size - 2]);
+	cCoef[size - 1] = (6.0 * ((y[size - 1] - y[size - 1]) / (x[size - 1] - x[size - 2])
+		- (y[size - 2] - y[size - 3]) / (x[size - 1] - x[size - 2]))
+		- (x[size - 2] - x[size - 3]) * beta[size - 2])
+		/ (2.0 * (x[size - 2] - x[size - 3] + x[size - 1] - x[size - 2])
+		- (x[size - 2] - x[size - 3]) * alpha[size - 2]);
 
 	for (int i = size - 2; i >= 0; i--)
 		cCoef[i] = beta[i] - alpha[i] * cCoef[i + 1];
@@ -79,14 +68,14 @@ void sweepMethod(
 void computeBD(
 	const std::vector<double>& x,
 	const std::vector<double>& y,
-	Data& data
+	splineCoeff& coef
 ) {
 	size_t size = x.size();
 	for (size_t i = 1; i < size; ++i) {
-		data.coef.d[i] = (data.coef.c[i] - data.coef.c[i - 1]) / data.h[i - 1];
-		data.coef.b[i] = data.h[i - 1] * data.coef.c[i] / 2.0
-			- data.h[i - 1] * data.h[i - 1] * data.coef.d[i] / 6.0
-			+ (y[i] - y[i - 1]) / data.h[i - 1];
+		coef.d[i] = (coef.c[i] - coef.c[i - 1]) / (x[i] - x[i - 1]);
+		coef.b[i] = (x[i] - x[i - 1]) * coef.c[i] / 2.0
+			- (x[i] - x[i - 1]) * (x[i] - x[i - 1]) * coef.d[i] / 6.0
+			+ (y[i] - y[i - 1]) / (x[i] - x[i - 1]);
 	}
 }
 
@@ -94,18 +83,17 @@ void computeBD(
 splineCoeff createSpline(
 	const std::vector<double>& x,
 	const std::vector<double>& y,
-	Data& data
+	splineCoeff& coef
 ) {
-	size_t size = x.size();
-	sweepMethod(data.A, data.B, data.C, data.F, data.coef.c);
-	computeBD(x, y, data);
-	return data.coef;
+	sweepMethod(x, y, coef.c);
+	computeBD(x, y, coef);
+	return coef;
 }
 
 //Полный цикл вычисления
 splineCoeff calculateLoop(std::vector<double>& x, std::vector<double>& y) {
 	prepareCoord(x, y);
-	Data data = prepareData(x, y);
+	splineCoeff data = prepareData(x, y);
 	return createSpline(x, y, data);
 }
 
