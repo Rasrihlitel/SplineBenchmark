@@ -13,7 +13,7 @@ bool testInterpolationNodes() {
     splineCoeff coef = calculateLoop(x, y, ws);
     bool ok = true;
     for (size_t i = 0; i < x.size(); ++i) {
-        double val = evaluateSpline(coef, x, x[i]);
+        double val = evaluateSpline(coef, x, y, x[i]);
         if (std::abs(val - y[i]) >= 1e-10) ok = false;
     }
     return ok;
@@ -67,7 +67,7 @@ bool testLinearReproduction() {
     for (size_t i = 0; i < x.size() - 1; ++i) {
         for (int k = 1; k < intervals; ++k) {
             double xi = x[i] + (x[i + 1] - x[i]) * k / intervals;
-            double val = evaluateSpline(coef, x, xi);
+            double val = evaluateSpline(coef, x, y, xi);
             if (std::abs(val - f(xi)) >= 1e-10) ok = false;
         }
     }

@@ -71,7 +71,6 @@ splineCoeff& createSpline(
 ) {
 	size_t size = x.size();
 	ws.resize(size);
-	ws.coef.a = y;
 	sweepMethod(x, y, ws);
 	computeBD(x, y, ws);
 	return ws.coef;
@@ -103,13 +102,14 @@ int findInterval(const std::vector<double>& x, double xVal) {
 double evaluateSpline(
 	const splineCoeff& coef,
 	const std::vector<double>& x,
+	const std::vector<double>& y,
 	double xVal
 ) {
 	if (xVal < x.front() || xVal > x.back())
 		throw std::out_of_range("Point lies outside the interpolation area");
 	int interval = findInterval(x, xVal);
 	double diff = xVal - x[interval];
-	return coef.a[interval]
+	return y[interval]
 		+ coef.b[interval] * diff
 		+ (coef.c[interval] / 2.0) * diff * diff
 		+ (coef.d[interval] / 6.0) * diff * diff * diff;
@@ -119,6 +119,7 @@ double evaluateSpline(
 void exportSplineToCSV(
 	const splineCoeff& coef,
 	const std::vector<double>& x,
+	const std::vector<double>& y,
 	int numPoints
 ) {
 	if (x.size() < 2)
@@ -132,7 +133,7 @@ void exportSplineToCSV(
 	file << "x;y\n";
 	for (int i = 0; i < numPoints; ++i) {
 		double xVal = x.front() + i * step;
-		double yVal = evaluateSpline(coef, x, xVal);
+		double yVal = evaluateSpline(coef, x, y, xVal);
 		file << xVal << ";" << yVal << "\n";
 	}
 	file.close();

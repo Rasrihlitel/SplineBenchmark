@@ -31,7 +31,7 @@ void demonstration() {
     std::cout << "Spline coefficients\n";
     for (size_t i = 0; i < x.size(); ++i) {
         std::cout << "Section " << i << ":\n";
-        std::cout << " a = " << coef.a[i] << "\n";
+        std::cout << " a = " << y[i] << "\n";
         std::cout << " b = " << coef.b[i] << "\n";
         std::cout << " c = " << coef.c[i] << "\n";
         std::cout << " d = " << coef.d[i] << "\n";
@@ -40,7 +40,7 @@ void demonstration() {
     //Проверка в узлах интерполяции
     std::cout << "Check in the nodes\n";
     for (size_t i = 0; i < x.size(); ++i) {
-        double val = evaluateSpline(coef, x, x[i]);
+        double val = evaluateSpline(coef, x, y, x[i]);
         std::cout << "S(" << x[i] << ") = " << val
             << " | Error rate: " << std::abs(val - y[i]) << "\n";
     }
@@ -49,7 +49,7 @@ void demonstration() {
     std::cout << "Check at intermediate points\n";
     std::vector<double> test_points = { 0.5, 1.5, 2.5 };
     for (double pt : test_points) {
-        double val = evaluateSpline(coef, x, pt);
+        double val = evaluateSpline(coef, x, y, pt);
         double exact_val = pt * pt * pt;
         std::cout << "S(" << pt << ") = " << val
             << " | correct x^3 = " << exact_val
@@ -57,7 +57,7 @@ void demonstration() {
     }
     std::cout << "\n";
     //Заполнение таблицы данными
-    exportSplineToCSV(coef, x, 300);
+    exportSplineToCSV(coef, x, y, 300);
 }
 
 int main() {

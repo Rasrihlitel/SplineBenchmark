@@ -5,7 +5,6 @@
 
 //Коэффициенты сплайна
 struct splineCoeff {
-	std::vector<double> a;
 	std::vector<double> b;
 	std::vector<double> c;
 	std::vector<double> d;
@@ -20,7 +19,6 @@ struct SplineWorkspace {
 		if (alpha.size() != size) {
 			alpha.resize(size, 0.0);
 			beta.resize(size, 0.0);
-			coef.a.resize(size, 0.0);
 			coef.b.resize(size, 0.0);
 			coef.c.resize(size, 0.0);
 			coef.d.resize(size, 0.0);
@@ -72,6 +70,7 @@ int findInterval(const std::vector<double>& x, double xVal);
 double evaluateSpline(
 	const splineCoeff& coef,
 	const std::vector<double>& x,
+	const std::vector<double>& y,
 	double xVal
 );
 
@@ -81,6 +80,7 @@ double evaluateSpline(
 void exportSplineToCSV(
 	const splineCoeff& coef,
 	const std::vector<double>& x,
+	const std::vector<double>& y,
 	int numPoints
 );
 
