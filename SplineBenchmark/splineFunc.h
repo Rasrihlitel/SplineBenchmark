@@ -15,13 +15,13 @@ struct SplineWorkspace {
 	splineCoeff coef;
 	std::vector<double> alpha;
 	std::vector<double> beta;
-	void resize(int size) {
+	void resize(size_t size) {
 		if (alpha.size() != size) {
-			alpha.resize(size, 0.0);
-			beta.resize(size, 0.0);
-			coef.b.resize(size, 0.0);
-			coef.c.resize(size, 0.0);
-			coef.d.resize(size, 0.0);
+			alpha.assign(size, 0.0);
+			beta.assign(size, 0.0);
+			coef.b.assign(size, 0.0);
+			coef.c.assign(size, 0.0);
+			coef.d.assign(size, 0.0);
 		}
 	}
 };

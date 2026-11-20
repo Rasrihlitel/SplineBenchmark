@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <stdexcept>
 #include <fstream>
+#include <omp.h>
 
 //Подготовка входных координат
 void prepareCoord(std::vector<double>& x, std::vector<double>& y) {
@@ -34,16 +35,15 @@ void sweepMethod(
 	size_t size = x.size();
 	for (size_t i = 1; i < size - 1; ++i) {
 		double A = x[i] - x[i - 1];
-		double C = 2.0 * (x[i] - x[i - 1] + x[i + 1] - x[i]);
 		double B = x[i + 1] - x[i];
-		double F = 6.0 * ((y[i + 1] - y[i]) / (x[i + 1] - x[i]) 
-			- (y[i] - y[i - 1]) / (x[i] - x[i - 1]));
+		double C = 2.0 * (A + B);
+		double F = 6.0 * ((y[i + 1] - y[i]) / B 
+			- (y[i] - y[i - 1]) / A);
 
-		double denom = C - ws.alpha[i - 1] * A;
-		ws.alpha[i] = B / denom;
-		ws.beta[i] = (F - A * ws.beta[i - 1]) / denom;
+		double denom = 1.0 / (C - ws.alpha[i - 1] * A);
+		ws.alpha[i] = B * denom;
+		ws.beta[i] = (F - A * ws.beta[i - 1]) * denom;
 	}
-
 	for (int i = size - 2; i >= 1; i--)
 		ws.coef.c[i] = ws.beta[i] - ws.alpha[i] * ws.coef.c[i + 1];
 }
