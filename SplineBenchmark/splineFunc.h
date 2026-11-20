@@ -2,26 +2,27 @@
 #ifndef SPLINEFUNC_H
 #define SPLINEFUNC_H
 #include <vector>
+#include "realType.h"
 
 //Коэффициенты сплайна
 struct splineCoeff {
-	std::vector<double> b;
-	std::vector<double> c;
-	std::vector<double> d;
+	std::vector<Real> b;
+	std::vector<Real> c;
+	std::vector<Real> d;
 };
 
 // Рабочее пространство
 struct SplineWorkspace {
 	splineCoeff coef;
-	std::vector<double> alpha;
-	std::vector<double> beta;
+	std::vector<Real> alpha;
+	std::vector<Real> beta;
 	void resize(size_t size) {
 		if (alpha.size() != size) {
-			alpha.assign(size, 0.0);
-			beta.assign(size, 0.0);
-			coef.b.assign(size, 0.0);
-			coef.c.assign(size, 0.0);
-			coef.d.assign(size, 0.0);
+			alpha.assign(size, Real(0));
+			beta.assign(size, Real(0));
+			coef.b.assign(size, Real(0));
+			coef.c.assign(size, Real(0));
+			coef.d.assign(size, Real(0));
 		}
 	}
 };
@@ -29,49 +30,49 @@ struct SplineWorkspace {
 // -----------------Подготовка данных-----------------//
 
 //Подготовка входных координат
-void prepareCoord(std::vector<double>& x, std::vector<double>& y);
+void prepareCoord(std::vector<Real>& x, std::vector<Real>& y);
 
 //-----------------Вычисление сплайна-----------------//
 
 //Решение трехдиагональной матрицы 
 void sweepMethod(
-	const std::vector<double>& x,
-	const std::vector<double>& y,
+	const std::vector<Real>& x,
+	const std::vector<Real>& y,
 	SplineWorkspace& ws
 );
 
 //Вычисление коэффициентов b и d
 void computeBD(
-	const std::vector<double>& x,
-	const std::vector<double>& y,
+	const std::vector<Real>& x,
+	const std::vector<Real>& y,
 	SplineWorkspace& ws
 );
 
 //Вычисление коэффициентов сплайна
 splineCoeff& createSpline(
-	const std::vector<double>& x,
-	const std::vector<double>& y,
+	const std::vector<Real>& x,
+	const std::vector<Real>& y,
 	SplineWorkspace& ws
 );
 
 //Полный цикл вычисления
 const splineCoeff& calculateLoop(
-	std::vector<double>& x,
-	std::vector<double>& y,
+	std::vector<Real>& x,
+	std::vector<Real>& y,
 	SplineWorkspace& ws
 );
 
 //-----------------Вычисления в точках-----------------//
 
 //Нахождение интервала
-int findInterval(const std::vector<double>& x, double xVal);
+int findInterval(const std::vector<Real>& x, Real xVal);
 
 //Вычисление в точке
-double evaluateSpline(
+Real evaluateSpline(
 	const splineCoeff& coef,
-	const std::vector<double>& x,
-	const std::vector<double>& y,
-	double xVal
+	const std::vector<Real>& x,
+	const std::vector<Real>& y,
+	Real xVal
 );
 
 //-----------------Графическое представление сплайна-----------------//
@@ -79,8 +80,8 @@ double evaluateSpline(
 //Графическое представление сплайна
 void exportSplineToCSV(
 	const splineCoeff& coef,
-	const std::vector<double>& x,
-	const std::vector<double>& y,
+	const std::vector<Real>& x,
+	const std::vector<Real>& y,
 	int numPoints
 );
 

@@ -6,11 +6,10 @@
 #include "splineFunc.h"
 #include "tests.h"
 
-
 void demonstration() {
     //Функция y = x^3 на отрезке [0, 3]
-    std::vector<double> x = { 0.0, 1.0, 2.0, 3.0 };
-    std::vector<double> y = { 0.0, 1.0, 8.0, 27.0 };
+    std::vector<Real> x = { Real(0), Real(1), Real(2), Real(3), Real(4) };
+    std::vector<Real> y = { Real(0), Real(1), Real(8), Real(27), Real(64) };
     std::cout << "Starting points: \n";
     for (size_t i = 0; i < x.size(); i++) {
         std::cout << "Point " << i << " (" << x[i] << ", " << y[i] << ")\n";
@@ -40,17 +39,17 @@ void demonstration() {
     //Проверка в узлах интерполяции
     std::cout << "Check in the nodes\n";
     for (size_t i = 0; i < x.size(); ++i) {
-        double val = evaluateSpline(coef, x, y, x[i]);
+        Real val = evaluateSpline(coef, x, y, x[i]);
         std::cout << "S(" << x[i] << ") = " << val
             << " | Error rate: " << std::abs(val - y[i]) << "\n";
     }
     std::cout << "\n";
     //Проверяем в промежуточных точках
     std::cout << "Check at intermediate points\n";
-    std::vector<double> test_points = { 0.5, 1.5, 2.5 };
-    for (double pt : test_points) {
-        double val = evaluateSpline(coef, x, y, pt);
-        double exact_val = pt * pt * pt;
+    std::vector<Real> test_points = { Real(0.5), Real(1.5), Real(2.5) };
+    for (Real pt : test_points) {
+        Real val = evaluateSpline(coef, x, y, pt);
+        Real exact_val = pt * pt * pt;
         std::cout << "S(" << pt << ") = " << val
             << " | correct x^3 = " << exact_val
             << " | Error rate: " << std::abs(val - exact_val) << "\n";
@@ -61,7 +60,7 @@ void demonstration() {
 }
 
 int main() {
-    std::cout << std::fixed << std::setprecision(6);
+    std::cout << std::fixed << std::setprecision(PRINT_PREC);
 
     try {
         //Демонстрация

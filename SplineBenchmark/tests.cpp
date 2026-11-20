@@ -7,68 +7,67 @@
 
 //Первый тест - проверка интерполяции в узлах (над y = x^3)
 bool testInterpolationNodes() {
-    std::vector<double> x = { 0.0, 1.0, 2.0, 3.0 };
-    std::vector<double> y = { 0.0, 1.0, 8.0, 27.0 };
+    std::vector<Real> x = { Real(0), Real(1), Real(2), Real(3), Real(4) };
+    std::vector<Real> y = { Real(0), Real(1), Real(8), Real(27), Real(64) };
     SplineWorkspace ws;
     splineCoeff coef = calculateLoop(x, y, ws);
     bool ok = true;
     for (size_t i = 0; i < x.size(); ++i) {
-        double val = evaluateSpline(coef, x, y, x[i]);
-        if (std::abs(val - y[i]) >= 1e-10) ok = false;
+        Real val = evaluateSpline(coef, x, y, x[i]);
+        if (std::abs(val - y[i]) >= TEST_EPS) ok = false;
     }
     return ok;
 }
 
 //Второй тест - проверка непрерывности (над y = x^3)
 bool testContinuity() {
-    std::vector<double> x = { 0.0, 1.0, 2.0, 3.0, 4.0 };
-    std::vector<double> y = { 0.0, 1.0, 8.0, 27.0, 64.0 };
+    std::vector<Real> x = { Real(0), Real(1), Real(2), Real(3), Real(4) };
+    std::vector<Real> y = { Real(0), Real(1), Real(8), Real(27), Real(64) };
     SplineWorkspace ws;
     splineCoeff coef = calculateLoop(x, y, ws);
     bool ok = true;
-    const double small = 1e-10;
     for (size_t i = 1; i + 1 < x.size(); ++i) {
-        double xi = x[i];
-        double leftDeriv1 = coef.b[i];
-        double leftDeriv2 = coef.c[i];
-        double diff = xi - x[i + 1];
-        double rightDeriv1 = coef.b[i + 1]
+        Real xi = x[i];
+        Real leftDeriv1 = coef.b[i];
+        Real leftDeriv2 = coef.c[i];
+        Real diff = xi - x[i + 1];
+        Real rightDeriv1 = coef.b[i + 1]
             + coef.c[i + 1] * diff
-            + (coef.d[i + 1] / 2.0) * diff * diff;
-        double rightDeriv2 = coef.c[i + 1] + coef.d[i + 1] * diff;
-        if (std::abs(leftDeriv1 - rightDeriv1) > small) ok = false;
-        if (std::abs(leftDeriv2 - rightDeriv2) > small) ok = false;
+            + (coef.d[i + 1] / Real(2)) * diff * diff;
+        Real rightDeriv2 = coef.c[i + 1] + coef.d[i + 1] * diff;
+        if (std::abs(leftDeriv1 - rightDeriv1) > TEST_EPS) ok = false;
+        if (std::abs(leftDeriv2 - rightDeriv2) > TEST_EPS) ok = false;
     }
     return ok;
 }
 
 //Третий тест - вторые производные в граничных точках равны 0 (над y = x^3)
 bool testBoundaryPoints() {
-    std::vector<double> x = { 0.0, 1.0, 2.0, 3.0 };
-    std::vector<double> y = { 0.0, 1.0, 8.0, 27.0 };
+    std::vector<Real> x = { Real(0), Real(1), Real(2), Real(3) };
+    std::vector<Real> y = { Real(0), Real(1), Real(8), Real(27) };
     SplineWorkspace ws;
     splineCoeff coef = calculateLoop(x, y,ws);
     bool ok = true;
-    if (std::abs(coef.c.front()) >= 1e-10) ok = false;
-    if (std::abs(coef.c.back()) >= 1e-10) ok = false;
+    if (std::abs(coef.c.front()) >= TEST_EPS) ok = false;
+    if (std::abs(coef.c.back()) >= TEST_EPS) ok = false;
     return ok;
 }
 
 //Четвертый тест - воспроизведение линейной функции
 bool testLinearReproduction() {
-    auto f = [](double x) { return 3.0 * x + 1.0; };
-    std::vector<double> x = { 0.0, 1.0, 2.0, 3.0 };
-    std::vector<double> y;
-    for (double val : x) y.push_back(f(val));
+    auto f = [](Real x) { return Real(3) * x + Real(1); };
+    std::vector<Real> x = { Real(0), Real(1), Real(2), Real(3) };
+    std::vector<Real> y;
+    for (Real val : x) y.push_back(f(val));
     SplineWorkspace ws;
     splineCoeff coef = calculateLoop(x, y, ws);
     bool ok = true;
     const int intervals = 25;
     for (size_t i = 0; i < x.size() - 1; ++i) {
         for (int k = 1; k < intervals; ++k) {
-            double xi = x[i] + (x[i + 1] - x[i]) * k / intervals;
-            double val = evaluateSpline(coef, x, y, xi);
-            if (std::abs(val - f(xi)) >= 1e-10) ok = false;
+            Real xi = x[i] + (x[i + 1] - x[i]) * k / intervals;
+            Real val = evaluateSpline(coef, x, y, xi);
+            if (std::abs(val - f(xi)) >= TEST_EPS) ok = false;
         }
     }
     return ok;
@@ -79,11 +78,11 @@ void testTime() {
     std::srand(42);
     int repeats = 50;
     int size = 1000000;
-    std::vector<double> baseX(size);
-    std::vector<double> baseY(size);
+    std::vector<Real> baseX(size);
+    std::vector<Real> baseY(size);
     for (int i = 0; i < size; i++) {
-        baseX[i] = i * (1.0 / (size - 1));
-        baseY[i] = static_cast<double>(std::rand());
+        baseX[i] = Real(i) * (Real(1) / Real(size - 1));
+        baseY[i] = static_cast<Real>(std::rand());
     }
     long long totalTime = 0;
     SplineWorkspace ws;
@@ -93,7 +92,13 @@ void testTime() {
         auto end = std::chrono::steady_clock::now();
         totalTime += std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
     }
-    double averageTime = static_cast<double>(totalTime) / static_cast<double>(repeats);
-    std::cout << "Size: " << size << std::endl;
-    std::cout << "Average time: " << averageTime << " ms" << std::endl;
+    Real averageTime = static_cast<Real>(totalTime) / static_cast<Real>(repeats);
+    std::cout << "Size: " << size
+#ifdef USE_FLOAT
+        << " (float)"
+#else 
+        << " (double)"
+#endif
+        << "\n";
+    std::cout << "Average time: " << Real(averageTime) << " ms" << std::endl;
 }

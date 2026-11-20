@@ -5,7 +5,7 @@
 #include <omp.h>
 
 //Подготовка входных координат
-void prepareCoord(std::vector<double>& x, std::vector<double>& y) {
+void prepareCoord(std::vector<Real>& x, std::vector<Real>& y) {
 	if (x.size() != y.size())
 		throw std::invalid_argument("The number of x and y coordinates does not match");
 	if (x.size() < 2)
@@ -15,7 +15,7 @@ void prepareCoord(std::vector<double>& x, std::vector<double>& y) {
 		if (x[i + 1] < x[i]) { isSort = false; break; }
 	}
 	if (isSort) return;
-	std::vector<std::pair<double, double>> coords(x.size());
+	std::vector<std::pair<Real, Real>> coords(x.size());
 	for (size_t i = 0; i < x.size(); i++) {
 		coords[i] = { x[i], y[i] };
 	}
@@ -28,19 +28,18 @@ void prepareCoord(std::vector<double>& x, std::vector<double>& y) {
 
 //Решение трехдиагональной матрицы 
 void sweepMethod(
-	const std::vector<double>& x,
-	const std::vector<double>& y,
+	const std::vector<Real>& x,
+	const std::vector<Real>& y,
 	SplineWorkspace& ws
 ) {
 	size_t size = x.size();
 	for (size_t i = 1; i < size - 1; ++i) {
-		double A = x[i] - x[i - 1];
-		double B = x[i + 1] - x[i];
-		double C = 2.0 * (A + B);
-		double F = 6.0 * ((y[i + 1] - y[i]) / B 
+		Real A = x[i] - x[i - 1];
+		Real B = x[i + 1] - x[i];
+		Real C = Real(2) * (A + B);
+		Real F = Real(6) * ((y[i + 1] - y[i]) / B
 			- (y[i] - y[i - 1]) / A);
-
-		double denom = 1.0 / (C - ws.alpha[i - 1] * A);
+		Real denom = Real(1) / (C - ws.alpha[i - 1] * A);
 		ws.alpha[i] = B * denom;
 		ws.beta[i] = (F - A * ws.beta[i - 1]) * denom;
 	}
@@ -49,24 +48,24 @@ void sweepMethod(
 }
 
 void computeBD(
-	const std::vector<double>& x,
-	const std::vector<double>& y,
+	const std::vector<Real>& x,
+	const std::vector<Real>& y,
 	SplineWorkspace& ws
 ) {
 	size_t size = x.size();
 	for (size_t i = 1; i < size; ++i) {
-		double h = x[i] - x[i - 1];
+		Real h = x[i] - x[i - 1];
 		ws.coef.d[i] = (ws.coef.c[i] - ws.coef.c[i - 1]) / h;
-		ws.coef.b[i] = (h * ws.coef.c[i] / 2.0)
-			- (h * h * ws.coef.d[i] / 6.0)
+		ws.coef.b[i] = (h * ws.coef.c[i] / Real(2)) 
+			- (h * h * ws.coef.d[i] / Real(6))
 			+ (y[i] - y[i - 1]) / h;
 	}
 }
 
 //Вычисление коэффициентов сплайна
 splineCoeff& createSpline(
-	const std::vector<double>& x,
-	const std::vector<double>& y,
+	const std::vector<Real>& x,
+	const std::vector<Real>& y,
 	SplineWorkspace& ws
 ) {
 	size_t size = x.size();
@@ -78,8 +77,8 @@ splineCoeff& createSpline(
 
 //Полный цикл вычисления
 const splineCoeff& calculateLoop(
-	std::vector<double>& x,
-	std::vector<double>& y,
+	std::vector<Real>& x,
+	std::vector<Real>& y,
 	SplineWorkspace& ws
 ) {
 	prepareCoord(x, y);
@@ -87,7 +86,7 @@ const splineCoeff& calculateLoop(
 }
 
 //Нахождение интервала
-int findInterval(const std::vector<double>& x, double xVal) {
+int findInterval(const std::vector<Real>& x, Real xVal) {
 	size_t size = x.size();
 	int left = 0, right = size - 1;
 	while (left < right - 1) {
@@ -99,41 +98,41 @@ int findInterval(const std::vector<double>& x, double xVal) {
 }
 
 //Вычисление в точке
-double evaluateSpline(
+Real evaluateSpline(
 	const splineCoeff& coef,
-	const std::vector<double>& x,
-	const std::vector<double>& y,
-	double xVal
+	const std::vector<Real>& x,
+	const std::vector<Real>& y,
+	Real xVal
 ) {
 	if (xVal < x.front() || xVal > x.back())
 		throw std::out_of_range("Point lies outside the interpolation area");
 	int interval = findInterval(x, xVal);
-	double diff = xVal - x[interval];
+	Real diff = xVal - x[interval];
 	return y[interval]
 		+ coef.b[interval] * diff
-		+ (coef.c[interval] / 2.0) * diff * diff
-		+ (coef.d[interval] / 6.0) * diff * diff * diff;
+		+ (coef.c[interval] / Real(2)) * diff * diff
+		+ (coef.d[interval] / Real(6)) * diff * diff * diff;
 }
 
 //Графическое представление сплайна
 void exportSplineToCSV(
 	const splineCoeff& coef,
-	const std::vector<double>& x,
-	const std::vector<double>& y,
+	const std::vector<Real>& x,
+	const std::vector<Real>& y,
 	int numPoints
 ) {
 	if (x.size() < 2)
 		throw std::invalid_argument("At least 2 nodes required");
 	if (numPoints < 2) numPoints = 2;
 
-	double step = (x.back() - x.front()) / (numPoints - 1);
+	Real step = (x.back() - x.front()) / Real(numPoints - 1);
 	std::ofstream file("printSpline.csv");
 	if (!file.is_open()) return;
 
 	file << "x;y\n";
 	for (int i = 0; i < numPoints; ++i) {
-		double xVal = x.front() + i * step;
-		double yVal = evaluateSpline(coef, x, y, xVal);
+		Real xVal = x.front() + Real(i) * step;
+		Real yVal = evaluateSpline(coef, x, y, xVal);
 		file << xVal << ";" << yVal << "\n";
 	}
 	file.close();
