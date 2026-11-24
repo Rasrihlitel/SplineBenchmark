@@ -1,5 +1,6 @@
 #include "splineFunc.h"
 #include <algorithm>
+#include <cstddef>
 #include <stdexcept>
 #include <fstream>
 #include <omp.h>
@@ -26,13 +27,13 @@ void prepareCoord(std::vector<Real>& x, std::vector<Real>& y) {
 	}
 }
 
-//Решение трехдиагональной матрицы 
+//Решение трехдиагональной матрицы методом прогонки Томаса
 void sweepMethod(
 	const std::vector<Real>& x,
 	const std::vector<Real>& y,
 	SplineWorkspace& ws
 ) {
-	size_t size = x.size();
+	const size_t size = x.size();
 	for (size_t i = 1; i < size - 1; ++i) {
 		Real A = x[i] - x[i - 1];
 		Real B = x[i + 1] - x[i];
@@ -47,12 +48,99 @@ void sweepMethod(
 		ws.coef.c[i] = ws.beta[i] - ws.alpha[i] * ws.coef.c[i + 1];
 }
 
+//Решение трехдиагональной матрицы методом циклической редукции
+void cyclicReductionParallel(
+    std::vector<Real>& a,
+    std::vector<Real>& b,
+    std::vector<Real>& c,
+    std::vector<Real>& d,
+    std::vector<Real>& x
+) {
+	size_t size = b.size() - 2;
+    if (size == 0) return;
+    if (size == 1) { x[1] = d[0] / b[0]; return; }
+    size_t stride = 1;
+    size_t num_equations = size;
+    while (num_equations > 1) {
+        const size_t new_num = (num_equations + 1) / 2;
+#pragma omp parallel for schedule(static)
+        for (int i = 0; i < new_num; i++) {
+            const size_t idx = i * 2 * stride;
+            if (idx == 0) {
+                if (idx + stride < size) {
+                    Real f = c[idx] / b[idx + stride];
+                    b[idx] -= f * a[idx + stride];
+                    d[idx] -= f * d[idx + stride];
+                    c[idx] = -f * c[idx + stride];
+                }
+            }
+            else if (idx + stride >= size) {
+                Real f = a[idx] / b[idx - stride];
+                b[idx] -= f * c[idx - stride];
+                d[idx] -= f * d[idx - stride];
+                a[idx] = -f * a[idx - stride];
+            }
+            else {
+                Real fl = a[idx] / b[idx - stride];
+                Real fr = c[idx] / b[idx + stride];
+                b[idx] -= fl * c[idx - stride] + fr * a[idx + stride];
+                d[idx] -= fl * d[idx - stride] + fr * d[idx + stride];
+                a[idx] = -fl * a[idx - stride];
+                c[idx] = -fr * c[idx + stride];
+            }
+        }
+        stride *= 2;
+        num_equations = new_num;
+    }
+    const size_t last_idx = ((size - 1) / stride) * stride;
+    x[1 + last_idx] = d[last_idx] / b[last_idx];
+    while (stride > 1) {
+        stride /= 2;
+        const size_t step = 2 * stride;
+#pragma omp parallel for schedule(static)
+        for (int i = stride; i < size; i += step) {
+            if (i + stride >= size) {
+                x[1 + i] = (d[i] - a[i] * x[1 + i - stride]) / b[i];
+            }
+            else {
+                x[1 + i] = (d[i] - a[i] * x[1 + i - stride]
+                    - c[i] * x[1 + i + stride]) / b[i];
+            }
+        }
+    }
+}
+
+//Обертка-подготовка для метода циклической редукции
+void cyclicReductionMethod(
+    const std::vector<Real>& x,
+    const std::vector<Real>& y,
+    SplineWorkspace& ws
+) {
+    const size_t size = x.size();
+    if (size < 3) {
+        ws.coef.c[0] = ws.coef.c[size - 1] = Real(0);
+        return;
+    }
+    const size_t N = size - 2;
+    for (size_t k = 0; k < N; ++k) {
+        const size_t i = k + 1;
+        ws.PCR_a[k] = x[i] - x[i - 1];
+		ws.PCR_c[k] = x[i + 1] - x[i];;
+        ws.PCR_b[k] = Real(2) * (ws.PCR_a[k] + ws.PCR_c[k]);
+        ws.PCR_d[k] = Real(6) * ((y[i + 1] - y[i]) / ws.PCR_c[k]
+            - (y[i] - y[i - 1]) / ws.PCR_a[k]);
+    }
+    cyclicReductionParallel(ws.PCR_a, ws.PCR_b, ws.PCR_c, ws.PCR_d, ws.coef.c);
+    ws.coef.c[0] = Real(0);
+    ws.coef.c[size - 1] = Real(0);
+}
+
 void computeBD(
 	const std::vector<Real>& x,
 	const std::vector<Real>& y,
 	SplineWorkspace& ws
 ) {
-	size_t size = x.size();
+	const size_t size = x.size();
 	for (size_t i = 1; i < size; ++i) {
 		Real h = x[i] - x[i - 1];
 		ws.coef.d[i] = (ws.coef.c[i] - ws.coef.c[i - 1]) / h;
@@ -63,14 +151,16 @@ void computeBD(
 }
 
 //Вычисление коэффициентов сплайна
-splineCoeff& createSpline(
+const splineCoeff& createSpline(
 	const std::vector<Real>& x,
 	const std::vector<Real>& y,
-	SplineWorkspace& ws
+	SplineWorkspace& ws,
+	Methods method
 ) {
-	size_t size = x.size();
+	const size_t size = x.size();
 	ws.resize(size);
-	sweepMethod(x, y, ws);
+	if (method == Methods::Thomas) sweepMethod(x, y, ws);
+	else cyclicReductionMethod(x, y, ws);
 	computeBD(x, y, ws);
 	return ws.coef;
 }
@@ -79,15 +169,16 @@ splineCoeff& createSpline(
 const splineCoeff& calculateLoop(
 	std::vector<Real>& x,
 	std::vector<Real>& y,
-	SplineWorkspace& ws
+	SplineWorkspace& ws,
+	Methods method
 ) {
 	prepareCoord(x, y);
-	return createSpline(x, y, ws);
+	return createSpline(x, y, ws, method);
 }
 
 //Нахождение интервала
 int findInterval(const std::vector<Real>& x, Real xVal) {
-	size_t size = x.size();
+	const size_t size = x.size();
 	int left = 0, right = size - 1;
 	while (left < right - 1) {
 		int mid = left + (right - left) / 2;

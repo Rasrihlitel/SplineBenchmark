@@ -19,7 +19,7 @@ void demonstration() {
     splineCoeff coef;
     SplineWorkspace ws;
     try {
-        coef = calculateLoop(x, y, ws);
+        coef = calculateLoop(x, y, ws, Methods::PCR);
         std::cout << "The spline is built\n";
     }
     catch (const std::exception& e) {
