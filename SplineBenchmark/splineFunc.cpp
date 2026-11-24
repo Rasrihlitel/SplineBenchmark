@@ -62,52 +62,53 @@ void cyclicReductionParallel(
     size_t stride = 1;
     size_t num_equations = size;
     while (num_equations > 1) {
-        const size_t new_num = (num_equations + 1) / 2;
+        size_t new_num = (num_equations + 1) / 2;
+		if (stride < size) {
+			Real f = c[0] / b[stride];
+			b[0] -= f * a[stride];
+			d[0] -= f * d[stride];
+			c[0] = -f * c[stride];
+		}
+
+		size_t last_idx = (new_num - 1) * 2 * stride;
+		size_t mid_end = new_num;
+
+		if (last_idx > 0 && last_idx + stride >= size) {
+			Real f = a[last_idx] / b[last_idx - stride];
+			b[last_idx] -= f * c[last_idx - stride];
+			d[last_idx] -= f * d[last_idx - stride];
+			a[last_idx] = -f * a[last_idx - stride];
+			mid_end = new_num - 1;
+		}
+
 #pragma omp parallel for schedule(static)
-        for (int i = 0; i < new_num; i++) {
+        for (int i = 1; i < mid_end; i++) {
             const size_t idx = i * 2 * stride;
-            if (idx == 0) {
-                if (idx + stride < size) {
-                    Real f = c[idx] / b[idx + stride];
-                    b[idx] -= f * a[idx + stride];
-                    d[idx] -= f * d[idx + stride];
-                    c[idx] = -f * c[idx + stride];
-                }
-            }
-            else if (idx + stride >= size) {
-                Real f = a[idx] / b[idx - stride];
-                b[idx] -= f * c[idx - stride];
-                d[idx] -= f * d[idx - stride];
-                a[idx] = -f * a[idx - stride];
-            }
-            else {
-                Real fl = a[idx] / b[idx - stride];
-                Real fr = c[idx] / b[idx + stride];
-                b[idx] -= fl * c[idx - stride] + fr * a[idx + stride];
-                d[idx] -= fl * d[idx - stride] + fr * d[idx + stride];
-                a[idx] = -fl * a[idx - stride];
-                c[idx] = -fr * c[idx + stride];
-            }
+            Real fl = a[idx] / b[idx - stride];
+            Real fr = c[idx] / b[idx + stride];
+            b[idx] -= fl * c[idx - stride] + fr * a[idx + stride];
+            d[idx] -= fl * d[idx - stride] + fr * d[idx + stride];
+            a[idx] = -fl * a[idx - stride];
+            c[idx] = -fr * c[idx + stride];
         }
         stride *= 2;
         num_equations = new_num;
     }
     const size_t last_idx = ((size - 1) / stride) * stride;
     x[1 + last_idx] = d[last_idx] / b[last_idx];
-    while (stride > 1) {
-        stride /= 2;
-        const size_t step = 2 * stride;
+	while (stride > 1) {
+		stride /= 2;
+		size_t step = 2 * stride;
 #pragma omp parallel for schedule(static)
-        for (int i = stride; i < size; i += step) {
-            if (i + stride >= size) {
-                x[1 + i] = (d[i] - a[i] * x[1 + i - stride]) / b[i];
-            }
-            else {
-                x[1 + i] = (d[i] - a[i] * x[1 + i - stride]
-                    - c[i] * x[1 + i + stride]) / b[i];
-            }
-        }
-    }
+		for (size_t i = stride; i < size; i += step) {
+			x[1 + i] = (d[i] - a[i] * x[1 + i - stride]) / b[i];
+		}
+		size_t right_edge = ((size - 1) / step) * step + stride;
+		if (right_edge < size && right_edge + stride >= size) {
+			x[1 + right_edge] = (d[right_edge] -
+				a[right_edge] * x[1 + right_edge - stride]) / b[right_edge];
+		}
+	}
 }
 
 //Обертка-подготовка для метода циклической редукции

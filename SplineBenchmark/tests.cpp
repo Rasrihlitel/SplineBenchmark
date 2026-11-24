@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <limits>
 #include <iostream>
+#include <omp.h>
 #include "splineFunc.h"
 
 //Первый тест - проверка интерполяции в узлах (над y = x^3)
@@ -75,6 +76,7 @@ bool testLinearReproduction() {
 
 //Пятый тест - тест по времени
 void testTime() {
+    omp_set_num_threads(4);
     std::srand(42);
     int repeats = 50;
     int size = 10000000;
